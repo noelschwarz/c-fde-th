@@ -83,8 +83,10 @@ export const kycToolConfig: ToolConfig = {
   audit: { enabled: true, includeReason: true },
 };
 
-// Type-safe guard: reviewers cannot approve high-risk cases.
+// Type-safe guard: only Senior Reviewers may approve cases, and high-risk
+// cases must be escalated before they can be approved directly.
 export function canApproveCase(roleKey: string, record: KYCCase): boolean {
   if (roleKey !== "senior_reviewer") return false;
+  if (record.risk === "High" && record.status === "Pending") return false;
   return true;
 }
