@@ -62,17 +62,26 @@ The playbook at `playbooks/create-internal-tool.devin.md` documents the procedur
 
 ## 7. How to add a new internal tool
 
-Follow `playbooks/create-internal-tool.devin.md`.
+The canonical way to add a tool is to have Devin follow `playbooks/create-internal-tool.devin.md`.
 
-Short version:
+### Using the playbook with Devin
 
-1. Inspect `platform/config/types.ts`, `platform/auth/types.ts`, `tools/kyc/config.ts`, and `tools/kyc/data.ts`.
-2. Add roles/permissions to `platform/auth/types.ts` if the existing primitives are insufficient.
-3. Create `tools/<name>/data.ts` and `tools/<name>/config.ts`.
-4. Use `createMockConnector<T>` unless a real connector is explicitly justified.
-5. Register the config in `app/page.tsx`.
-6. Add a custom view in `components/tools/` only if `ToolConfig` cannot express the behavior.
-7. Run `npm run lint` and `npm run build`; fix failures.
+1. Open a new Devin session in this repository.
+2. Load `playbooks/create-internal-tool.devin.md` as a rule or playbook.
+3. Give Devin the business requirements: tool name, workflow/statuses, fields, roles, filters, actions, sensitive fields, and any special behavior.
+4. Devin inspects the framework (`platform/config/types.ts`, `platform/auth/types.ts`, `platform/audit/audit.ts`, `platform/connectors/connector.ts`) and an existing tool such as `tools/kyc`.
+5. Devin maps the requirements to a `ToolConfig`. Standard behavior (queue, filters, detail view, actions, audit, PII masking, permissions) is expressed entirely through config.
+6. If a requirement cannot be represented in `ToolConfig`, Devin adds only the smallest necessary custom code, such as a typed guard function or a small React view in `components/tools/`.
+7. Devin routes data access through `createMockConnector<T>` unless a real connector is explicitly justified.
+8. Devin registers the tool in `app/page.tsx` (or in a dedicated `app/<route>/page.tsx` when a custom view needs its own route).
+9. Devin runs `npm run lint` and `npm run build` and fixes failures.
+10. Devin opens a pull request summarizing files added, config added, custom code, permissions, data access assumptions, and security assumptions.
+
+### Why Devin can generate the tool
+
+The runtime is intentionally constrained: `ToolConfig` is a complete description of a normal internal tool, and the generic components in `components/runtime/` interpret that description at runtime. Permissions, audit, masking, and data access are all handled by shared primitives, so adding a tool becomes a data-modeling and workflow-mapping exercise rather than a frontend-building exercise. The playbook encodes this mapping, making the task reproducible for Devin.
+
+If a tool is too custom to fit the schema, the playbook explicitly falls back to a small custom component instead of expanding the configuration language.
 
 ## 8. What is mocked
 
@@ -106,14 +115,35 @@ The prototype instead tests whether Devin can materially reduce the marginal eng
 
 ## 11. Local setup
 
+Requirements:
+
+- Node.js 18+ (20 recommended)
+- npm
+
+Install dependencies and start the dev server:
+
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) in a browser.
 
-Use the role switcher in the top-right to toggle between Reviewer and Senior Reviewer and observe permission, masking, and audit behavior.
+The default page renders the KYC Review queue. Use the role switcher in the top-right to toggle between Reviewer and Senior Reviewer:
+
+- **Reviewer**: can view cases, reject, and escalate. Sensitive PII is masked and the approve action is unavailable.
+- **Senior Reviewer**: can view sensitive data and approve cases, including the high-risk approval path.
+
+Selecting a case opens the detail view. Approving, rejecting, or escalating writes an event to the in-memory audit history shown in the case panel.
+
+Validate changes before committing:
+
+```bash
+npm run lint
+npm run build
+```
+
+Both must pass.
 
 ## 12. Deployment
 
