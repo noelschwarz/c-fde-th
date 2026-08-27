@@ -38,15 +38,7 @@ export function AppShell({
               {tool.metadata.name}
             </a>
           ))}
-          <button
-            disabled
-            className="block w-full rounded px-3 py-2 text-left text-sm text-gray-500 cursor-not-allowed"
-          >
-            Refunds
-          </button>
-          <button className="block w-full rounded px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800">
-            + New Tool
-          </button>
+
         </nav>
       </aside>
       <div className="flex flex-1 flex-col">
