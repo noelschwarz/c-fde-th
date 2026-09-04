@@ -62,10 +62,3 @@ export const refundToolConfig: ToolConfig = {
   audit: { enabled: true, includeReason: true },
 };
 
-export function canApproveRefund(record: RefundCase): boolean {
-  return record.status === "Pending";
-}
-
-export function canRejectRefund(record: RefundCase): boolean {
-  return record.status === "Pending";
-}

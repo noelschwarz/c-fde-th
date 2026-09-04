@@ -52,6 +52,12 @@ export const kycToolConfig: ToolConfig = {
       ],
       requiresReason: false,
       audit: true,
+      guard: (record, role) => {
+        const kyc = record as KYCCase;
+        if (role.key !== "senior_reviewer") return false;
+        if (kyc.risk === "High" && kyc.status === "Pending") return false;
+        return true;
+      },
     },
     {
       key: "reject",
@@ -83,10 +89,3 @@ export const kycToolConfig: ToolConfig = {
   audit: { enabled: true, includeReason: true },
 };
 
-// Type-safe guard: only Senior Reviewers may approve cases, and high-risk
-// cases must be escalated before they can be approved directly.
-export function canApproveCase(roleKey: string, record: KYCCase): boolean {
-  if (roleKey !== "senior_reviewer") return false;
-  if (record.risk === "High" && record.status === "Pending") return false;
-  return true;
-}

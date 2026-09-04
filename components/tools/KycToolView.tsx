@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { kycToolConfig, canApproveCase } from "@/tools/kyc/config";
+import { kycToolConfig } from "@/tools/kyc/config";
 import { initialKycData, KYCCase } from "@/tools/kyc/data";
 import { createMockConnector } from "@/platform/connectors/mock";
 import { DataConnector, ListQuery } from "@/platform/connectors/connector";
-import { Action, Role, ToolConfig, Column } from "@/platform/config/types";
+import { Action, Role, ToolConfig } from "@/platform/config/types";
 import { getRole, hasPermission, canViewSensitive, mask } from "@/platform/auth/types";
 import { emit, list as listAudit } from "@/platform/audit/audit";
 import { AuditEvent } from "@/platform/audit/types";
@@ -102,7 +102,6 @@ export function KycToolView({ currentRoleKey }: { currentRoleKey: string }) {
       if (action.requiredPermission && !hasPermission(role, action.requiredPermission)) return false;
       if (action.allowedRoles && !action.allowedRoles.includes(role.key)) return false;
       if (action.guard && !action.guard(record, role)) return false;
-      if (action.key === "approve" && !canApproveCase(role.key, record)) return false;
       if (action.stateTransitions) {
         return action.stateTransitions.some(
           (t) => t.from === record.status || t.from === "*"
