@@ -8,7 +8,7 @@ This is a prototype runtime for standardized internal tools. It asks whether mos
 
 - A shared Next.js + TypeScript + React + Tailwind runtime.
 - A `ToolConfig` schema that describes a tool's metadata, data, columns, filters, actions, roles, state transitions, reason requirements, audit requirements, and sensitive fields.
-- Reusable runtime components: `AppShell`, `DataTable`, `FilterBar`, `ActionModal`, `AuditHistory`, `RoleSwitcher`.
+- Reusable runtime components: `AppShell`, `GenericToolView`, `DataTable`, `FilterBar`, `ActionModal`, `AuditHistory`, `RoleSwitcher`.
 - A simulation of fintech-style controls: role-based permissions, PII masking, and audit logging.
 - A `DataConnector<T>` abstraction with an in-memory mock implementation.
 - Two example tools: **KYC Review** (`tools/kyc`) and **Refund Review** (`tools/refund`).
@@ -18,12 +18,12 @@ This is a prototype runtime for standardized internal tools. It asks whether mos
 
 ```
 app/
-  page.tsx              # Registers tools and renders the selected one inside AppShell
-  refunds/page.tsx      # Example dedicated route for a custom tool view
+  page.tsx              # KYC Review wired through GenericToolView
+  refunds/page.tsx      # Refund Review wired through GenericToolView
 components/
   AppShell.tsx          # Navigation + layout
-  runtime/              # Generic table, filters, action modal, audit history
-  tools/                # Optional custom tool views (e.g. KycToolView, RefundToolView)
+  runtime/              # Generic table, filters, action modal, audit history, GenericToolView
+  tools/                # Optional custom tool views only when config is not enough
 platform/
   config/types.ts       # ToolConfig schema
   auth/types.ts         # Role/permission primitives and PII masking
@@ -35,7 +35,7 @@ playbooks/
   create-internal-tool.devin.md
 ```
 
-Tools are added by creating a directory under `tools/` and registering the exported `ToolConfig` in `app/page.tsx`.
+Tools are added by creating a directory under `tools/`, writing a `ToolConfig` and `DataConnector`, and registering the exported `ToolConfig` in `app/page.tsx`. A standard tool renders through `GenericToolView`; a custom `components/tools/` view is only needed when a workflow cannot be expressed in config.
 
 ## 3. Config-driven tool creation
 
@@ -43,8 +43,9 @@ A new standard tool primarily needs:
 
 - `tools/<name>/data.ts` — record type and mock records.
 - `tools/<name>/config.ts` — a `ToolConfig` object describing fields, columns, filters, actions, roles, state transitions, sensitive fields, and audit flags.
+- `app/<route>/page.tsx` — a page that wires the config and connector into `GenericToolView`, plus any tiny custom rendering hooks.
 
-Only when behavior cannot be expressed in `ToolConfig` should a custom React component be introduced.
+Only when behavior cannot be expressed in `ToolConfig` or a rendering hook should a custom React component be introduced.
 
 ## 4. Shared fintech controls
 
