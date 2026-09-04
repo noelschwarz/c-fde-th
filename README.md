@@ -30,12 +30,12 @@ platform/
   audit/audit.ts        # Audit event bus
   connectors/           # DataConnector interface + mock connector
 tools/
-  kyc/                  # Tool config, data, and guards
+  kyc/                  # Tool config, data, connector, and optional render hooks
 playbooks/
   create-internal-tool.devin.md
 ```
 
-Tools are added by creating a directory under `tools/`, writing a `ToolConfig` and `DataConnector`, and registering the exported `ToolConfig` in `app/page.tsx`. A standard tool renders through `GenericToolView`; a custom `components/tools/` view is only needed when a workflow cannot be expressed in config.
+Tools are added by creating a directory under `tools/` with a `ToolConfig`, data, and an optional `tool.tsx` that exports the connector and any render hooks. The `app/<route>/page.tsx` is a thin wrapper that wires these into `GenericToolView`. A custom `components/tools/` view is only needed when a workflow cannot be expressed in config or rendering hooks.
 
 ## 3. Config-driven tool creation
 
@@ -43,7 +43,8 @@ A new standard tool primarily needs:
 
 - `tools/<name>/data.ts` — record type and mock records.
 - `tools/<name>/config.ts` — a `ToolConfig` object describing fields, columns, filters, actions, roles, state transitions, sensitive fields, and audit flags.
-- `app/<route>/page.tsx` — a page that wires the config and connector into `GenericToolView`, plus any tiny custom rendering hooks.
+- `tools/<name>/tool.tsx` (optional) — connector and any custom rendering hooks that are too presentation-specific for `ToolConfig`.
+- `app/<route>/page.tsx` — a thin wrapper that wires the config and connector into `GenericToolView`.
 
 Only when behavior cannot be expressed in `ToolConfig` or a rendering hook should a custom React component be introduced.
 
