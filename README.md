@@ -11,7 +11,7 @@ This is a prototype runtime for standardized internal tools. It asks whether mos
 - Reusable runtime components: `AppShell`, `GenericToolView`, `DataTable`, `FilterBar`, `ActionModal`, `AuditHistory`, `RoleSwitcher`.
 - A simulation of fintech-style controls: role-based permissions, PII masking, and audit logging.
 - A `DataConnector<T>` abstraction with an in-memory mock implementation.
-- Two example tools: **KYC Review** (`tools/kyc`) and **Refund Review** (`tools/refund`).
+- Two example tools: **KYC Review** (`tools/kyc`) and **Refund Review** (`tools/refund`), both implemented purely as `ToolConfig` + `DataConnector` + optional rendering hooks on top of `GenericToolView`.
 - A Devin Playbook (`playbooks/create-internal-tool.devin.md`) for adding future tools.
 
 ## 2. Architecture
@@ -21,9 +21,10 @@ app/
   page.tsx              # KYC Review wired through GenericToolView
   refunds/page.tsx      # Refund Review wired through GenericToolView
 components/
-  AppShell.tsx          # Navigation + layout
-  runtime/              # Generic table, filters, action modal, audit history, GenericToolView
-  tools/                # Optional custom tool views only when config is not enough
+  AppShell.tsx                    # Navigation + layout
+  runtime/                        # Generic table, filters, action modal, audit history, and GenericToolView
+  runtime/GenericToolView.tsx     # Config-driven orchestration for the standard tool lifecycle
+  tools/                          # Optional custom tool views only when config and hooks are not enough
 platform/
   config/types.ts       # ToolConfig schema
   auth/types.ts         # Role/permission primitives and PII masking
@@ -73,15 +74,15 @@ The canonical way to add a tool is to have Devin follow `playbooks/create-intern
 3. Give Devin the business requirements: tool name, workflow/statuses, fields, roles, filters, actions, sensitive fields, and any special behavior.
 4. Devin inspects the framework (`platform/config/types.ts`, `platform/auth/types.ts`, `platform/audit/audit.ts`, `platform/connectors/connector.ts`) and an existing tool such as `tools/kyc`.
 5. Devin maps the requirements to a `ToolConfig`. Standard behavior (queue, filters, detail view, actions, audit, PII masking, permissions) is expressed entirely through config.
-6. If a requirement cannot be represented in `ToolConfig`, Devin adds only the smallest necessary custom code, such as a typed guard function or a small React view in `components/tools/`.
+6. If a requirement cannot be represented in `ToolConfig`, Devin adds only the smallest necessary custom code — first as a typed guard in the config, then as a rendering hook in `tools/<name>/tool.tsx`, and only as a last resort as a custom React view in `components/tools/`.
 7. Devin routes data access through `createMockConnector<T>` unless a real connector is explicitly justified.
-8. Devin registers the tool in `app/page.tsx` (or in a dedicated `app/<route>/page.tsx` when a custom view needs its own route).
+8. Devin creates or updates a thin `app/<route>/page.tsx` that wires the tool's `ToolConfig`, connector, and optional render hooks into `GenericToolView`, and registers the tool in `AppShell` navigation when needed.
 9. Devin runs `npm run lint` and `npm run build` and fixes failures.
 10. Devin opens a pull request summarizing files added, config added, custom code, permissions, data access assumptions, and security assumptions.
 
 ### Why Devin can generate the tool
 
-The runtime is intentionally constrained: `ToolConfig` is a complete description of a normal internal tool, and the generic components in `components/runtime/` interpret that description at runtime. Permissions, audit, masking, and data access are all handled by shared primitives, so adding a tool becomes a data-modeling and workflow-mapping exercise rather than a frontend-building exercise. The playbook encodes this mapping, making the task reproducible for Devin.
+The runtime is intentionally constrained: `ToolConfig` is a complete description of a normal internal tool, and `GenericToolView` interprets that description at runtime. `GenericToolView` handles data loading, filtering/search, table, detail view, actions, state transitions, PII masking, permissions, and audit logging using shared primitives. Adding a tool therefore becomes a data-modeling and workflow-mapping exercise rather than a frontend-building exercise. The playbook encodes this mapping, making the task reproducible for Devin.
 
 If a tool is too custom to fit the schema, the playbook explicitly falls back to a small custom component instead of expanding the configuration language.
 
@@ -134,7 +135,9 @@ Open [http://localhost:3000](http://localhost:3000) in a browser.
 The default page renders the KYC Review queue. Use the role switcher in the top-right to toggle between Reviewer and Senior Reviewer:
 
 - **Reviewer**: can view cases, reject, and escalate. Sensitive PII is masked and the approve action is unavailable.
-- **Senior Reviewer**: can view sensitive data and approve cases, including the high-risk approval path.
+- **Senior Reviewer**: can view sensitive data and approve cases, including the high-risk KYC approval path.
+
+Refund Review is available at [http://localhost:3000/refunds](http://localhost:3000/refunds). It uses the same `GenericToolView` runtime with a refund-specific `ToolConfig` and only a small presentation hook for currency formatting and status badges.
 
 Selecting a case opens the detail view. Approving, rejecting, or escalating writes an event to the in-memory audit history shown in the case panel.
 
