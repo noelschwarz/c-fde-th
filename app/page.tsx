@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { KycToolView } from "@/components/tools/KycToolView";
+import { GenericToolView } from "@/components/runtime/GenericToolView";
 import { kycToolConfig } from "@/tools/kyc/config";
+import { kycConnector, kycRecordLabel, renderKycCell } from "@/tools/kyc/tool";
 import { refundToolConfig } from "@/tools/refund/config";
 
 const tools = [kycToolConfig, refundToolConfig];
@@ -18,7 +19,13 @@ export default function Home() {
       currentRole={role}
       onRoleChange={setRole}
     >
-      <KycToolView currentRoleKey={role} />
+      <GenericToolView
+        config={kycToolConfig}
+        connector={kycConnector}
+        currentRoleKey={role}
+        recordLabel={kycRecordLabel}
+        renderCell={renderKycCell}
+      />
     </AppShell>
   );
 }

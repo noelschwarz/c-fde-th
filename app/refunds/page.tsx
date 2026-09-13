@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { RefundToolView } from "@/components/tools/RefundToolView";
+import { GenericToolView } from "@/components/runtime/GenericToolView";
 import { kycToolConfig } from "@/tools/kyc/config";
 import { refundToolConfig } from "@/tools/refund/config";
+import {
+  refundConnector,
+  refundRecordLabel,
+  renderRefundCell,
+  renderRefundDetailValue,
+} from "@/tools/refund/tool";
 
 const tools = [kycToolConfig, refundToolConfig];
 
@@ -18,7 +24,14 @@ export default function RefundsPage() {
       currentRole={role}
       onRoleChange={setRole}
     >
-      <RefundToolView currentRoleKey={role} />
+      <GenericToolView
+        config={refundToolConfig}
+        connector={refundConnector}
+        currentRoleKey={role}
+        recordLabel={refundRecordLabel}
+        renderCell={renderRefundCell}
+        renderDetailValue={renderRefundDetailValue}
+      />
     </AppShell>
   );
 }
